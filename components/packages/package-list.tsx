@@ -75,11 +75,11 @@ export function PackageList({ onPackageSelect, showPurchaseButton = true }: Pack
 
   // Fixed price logic: when discount_price is 0, use normal_price
   const getDisplayPrice = (pkg: Package) => {
-    return pkg.discount_price > 0 ? pkg.discount_price : pkg.normal_price;
+    return pkg.normal_price;
   };
 
   const hasDiscount = (pkg: Package) => {
-    return pkg.discount_price > 0 && pkg.discount_price < pkg.normal_price;
+    return pkg.discount_price > 0;
   };
 
   const getDiscountPercentage = (pkg: Package) => {
@@ -276,13 +276,11 @@ export function PackageList({ onPackageSelect, showPurchaseButton = true }: Pack
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-green-600">
-                      {formatPrice(displayPrice)}
-                    </span>
+                  <span className="text-2xl font-bold text-green-600">
+                    {formatPrice(getDisplayPrice(pkg))}
+                  </span>
                     {isDiscounted && (
-                      <span className="text-sm text-gray-500 line-through">
-                        {formatPrice(pkg.normal_price)}
-                      </span>
+                      <span className="text-sm text-gray-500 line-through">{formatPrice(pkg.discount_price)}</span>
                     )}
                   </div>
 
