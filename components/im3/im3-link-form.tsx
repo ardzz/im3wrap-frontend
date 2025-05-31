@@ -1,335 +1,294 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Loader2, Smartphone, CheckCircle, AlertCircle, Send, RefreshCw, User, Info } from 'lucide-react';
-import { toast } from 'sonner';
-
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useIM3Store } from '@/lib/store/im3-store';
+import { Progress } from '@/components/ui/progress';
+import {
+  Smartphone,
+  CheckCircle,
+  ExternalLink,
+  User,
+  Phone,
+  Mail,
+  CreditCard,
+  MapPin,
+  Calendar,
+  RefreshCw,
+  AlertTriangle,
+  Info,
+  Copy,
+  Eye,
+  EyeOff
+} from 'lucide-react';
+import { useIM3 } from '@/lib/hooks/use-im3';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { OTPForm } from './otp-form';
+import { toast } from 'sonner';
 
-const otpSchema = z.object({
-  otp: z.string().min(6, 'OTP must be 6 digits').max(6, 'OTP must be 6 digits').regex(/^\d+$/, 'OTP must contain only numbers'),
-});
+export function EnhancedIM3LinkForm() {
+  const { user } = useAuth();
+  const { profile, isLoading, error, isIM3Linked, loadProfile } = useIM3();
+  const [showSensitiveInfo, setShowSensitiveInfo] = useState(false);
 
-type OTPFormData = z.infer<typeof otpSchema>;
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
 
-export function IM3LinkForm() {
-  const [countdown, setCountdown] = useState(0);
-  const { user, refreshUser } = useAuth();
-  const {
-    sendOTP,
-    verifyOTP,
-    loadProfile,
-    loadBalance,
-    clearError,
-    isLoading,
-    isVerifying,
-    error,
-    otpSent,
-    isLinked,
-    profile,
-    isLoadingBalance,
-  } = useIM3Store();
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<OTPFormData>({
-    resolver: zodResolver(otpSchema),
-  });
-
-  // Load IM3 profile on component mount
-  useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
-
-  // Countdown timer for OTP resend
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (countdown > 0) {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    }
-    return () => clearTimeout(timer);
-  }, [countdown]);
-
-  const handleSendOTP = async () => {
-    if (!user?.phone_number) {
-      toast.error('Phone number required', {
-        description: 'Please add a phone number to your profile first.',
-      });
-      return;
-    }
-
+  const copyToClipboard = async (text: string, label: string) => {
     try {
-      clearError();
-      await sendOTP();
-      setCountdown(60);
-      toast.success('OTP sent!', {
-        description: `OTP has been sent to ${user.phone_number}`,
-      });
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} copied to clipboard`);
     } catch (error) {
-      toast.error('Failed to send OTP', {
-        description: 'Please try again or check your phone number.',
-      });
+      toast.error('Failed to copy to clipboard');
     }
   };
 
-  const onSubmit = async (data: OTPFormData) => {
-    try {
-      clearError();
-      await verifyOTP(data.otp);
-
-      toast.success('IM3 account linked!', {
-        description: 'Your IM3 account has been successfully linked. The page will refresh automatically.',
-        duration: 3000,
-      });
-
-      reset();
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-
-    } catch (error) {
-      toast.error('OTP verification failed', {
-        description: 'Please check your OTP and try again.',
-      });
-    }
+  const maskPhoneNumber = (phone: string) => {
+    if (!phone || phone.length < 4) return phone;
+    const start = phone.substring(0, 3);
+    const end = phone.substring(phone.length - 3);
+    const masked = '•'.repeat(Math.max(4, phone.length - 6));
+    return `${start}${masked}${end}`;
   };
 
-  const formatPhoneNumber = (phone: string) => {
-    if (phone.startsWith('0')) {
-      return '+62' + phone.slice(1);
-    }
-    return phone;
-  };
+  if (isIM3Linked && profile) {
+    return (
+      <div className="space-y-6">
+        {/* Account Details */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-gray-600" />
+                <CardTitle>Account Information</CardTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSensitiveInfo(!showSensitiveInfo)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                {showSensitiveInfo ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-4 w-4 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Mobile Number</p>
+                      <p className="text-lg font-semibold">
+                        +{showSensitiveInfo ? profile.mob : maskPhoneNumber(profile.mob)}
+                      </p>
+                    </div>
+                  </div>
+                  {showSensitiveInfo && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(profile.mob, 'Mobile number')}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
 
-  const formatBalance = (balance: number | undefined | null) => {
-    if (typeof balance !== 'number' || isNaN(balance)) {
-      return 'N/A';
-    }
-    return `Rp ${balance.toLocaleString('id-ID')}`;
-  };
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <User className="h-4 w-4 text-green-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Account Holder</p>
+                      <p className="text-lg font-semibold">{profile.name || 'Not provided'}</p>
+                    </div>
+                  </div>
+                </div>
 
-  const handleRefresh = async () => {
-    try {
-      await Promise.all([
-        loadProfile(),
-        refreshUser()
-      ]);
-      toast.success('Status refreshed!');
-    } catch (error) {
-      toast.error('Failed to refresh status');
-    }
-  };
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-purple-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Email</p>
+                      <p className="text-lg font-semibold">{profile.email || 'Not provided'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-  if ((isLinked || user?.token_id) && profile) {
+              {/* Right Column */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <CreditCard className="h-4 w-4 text-green-600" />
+                    <div>
+                      <p className="text-sm font-medium">Balance</p>
+                      <p className="text-xl font-bold">
+                        {formatCurrency(profile.balance)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Smartphone className="h-4 w-4 text-orange-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">User Type</p>
+                      <p className="text-lg font-semibold">{profile.usertype || 'Standard'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-4 w-4 text-red-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Membership ID</p>
+                      <p className="text-lg font-semibold">
+                        {showSensitiveInfo
+                          ? (profile.membershipid || 'Not available')
+                          : (profile.membershipid ? maskPhoneNumber(profile.membershipid) : 'Not available')
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  {showSensitiveInfo && profile.membershipid && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(profile.membershipid, 'Membership ID')}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Account Alerts */}
+        {profile.alerts && profile.alerts.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                Account Alerts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {profile.alerts.map((alert, index) => (
+                  <Alert key={index} className="border-yellow-200 bg-yellow-50">
+                    <Info className="h-4 w-4 text-yellow-600" />
+                    <AlertDescription>
+                      <div>
+                        <h4 className="font-medium text-yellow-800">{alert.title}</h4>
+                        <p className="text-yellow-700 text-sm mt-1">{alert.description}</p>
+                        {alert.buttontext && (
+                          <Button variant="outline" size="sm" className="mt-2 text-yellow-700 border-yellow-300 hover:bg-yellow-100">
+                            {alert.buttontext}
+                          </Button>
+                        )}
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  if (!user?.phone_number) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            IM3 Account Linked
+            <Smartphone className="h-5 w-5" />
+            Link IM3 Account
           </CardTitle>
           <CardDescription>
-            Your IM3 account is successfully linked to your profile
+            Add your phone number to link your IM3 account.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Profile Header */}
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={profile.img} alt={profile.name} />
-              <AvatarFallback>
-                <User className="h-8 w-8" />
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="text-lg font-semibold">{profile.name || 'IM3 User'}</h3>
-              <p className="text-sm text-gray-600">{formatPhoneNumber(profile.mob)}</p>
-              <Badge variant={profile.status === 'ACTIVE' ? 'default' : 'destructive'} className="mt-1">
-                {profile.status}
-              </Badge>
+        <CardContent>
+          <Alert>
+            <Smartphone className="h-4 w-4" />
+            <AlertDescription>
+              Please add your IM3 phone number in your profile to link your account.
+              This is required for OTP verification.
+            </AlertDescription>
+          </Alert>
+          <div className="mt-6 space-y-3">
+            <Button asChild className="w-full">
+              <a href="/profile">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Update Profile
+              </a>
+            </Button>
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Make sure to add your IM3 phone number (starting with +62)
+              </p>
             </div>
           </div>
-
-          {/* Profile Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-sm font-medium">Mobile Number</Label>
-              <p className="text-sm text-gray-600">{formatPhoneNumber(profile.mob)}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Account Name</Label>
-              <p className="text-sm text-gray-600">{profile.name || 'N/A'}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Email</Label>
-              <p className="text-sm text-gray-600">{profile.email || 'Not provided'}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">User Type</Label>
-              <p className="text-sm text-gray-600">{profile.usertype || 'N/A'}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Balance</Label>
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-gray-600">{formatBalance(profile.balance)}</p>
-                {isLoadingBalance && <Loader2 className="h-3 w-3 animate-spin" />}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Membership ID</Label>
-              <p className="text-sm text-gray-600">{profile.membershipid || 'N/A'}</p>
-            </div>
-          </div>
-
-          {/* Alerts */}
-          {profile.alerts && profile.alerts.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Account Alerts</Label>
-              {profile.alerts.map((alert, index) => (
-                <Alert key={index}>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>{alert.title}</strong><br />
-                    {alert.description}
-                  </AlertDescription>
-                </Alert>
-              ))}
-            </div>
-          )}
-
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            disabled={isLoading || isLoadingBalance}
-            className="w-full"
-          >
-            {(isLoading || isLoadingBalance) ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            Refresh Profile
-          </Button>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Smartphone className="h-5 w-5" />
-          Link IM3 Account
-        </CardTitle>
-        <CardDescription>
-          Link your IM3 account to purchase packages directly
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {!user?.phone_number ? (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Please add a phone number to your profile before linking your IM3 account.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <>
-            <div className="space-y-2">
-              <Label>Phone Number</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={formatPhoneNumber(user.phone_number)}
-                  disabled
-                  className="bg-gray-50"
-                />
-                <Badge variant="outline">Verified</Badge>
+    <div className="space-y-6">
+      {/* Progress Indicator */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5" />
+            Link Your IM3 Account
+          </CardTitle>
+          <CardDescription>
+            Follow the steps below to connect your IM3 account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-600">Phone number added</span>
+                </div>
+                <Progress value={33} className="h-2" />
               </div>
-              <p className="text-xs text-gray-500">
-                OTP will be sent to this number
+            </div>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <strong>Ready for verification:</strong> We'll send an OTP to <strong>+{user.phone_number}</strong>
               </p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            {!otpSent ? (
-              <Button
-                onClick={handleSendOTP}
-                disabled={isLoading || countdown > 0}
-                className="w-full"
-              >
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="mr-2 h-4 w-4" />
-                )}
-                {countdown > 0 ? `Resend in ${countdown}s` : 'Send OTP'}
-              </Button>
-            ) : (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="otp">Enter OTP Code</Label>
-                  <Input
-                    id="otp"
-                    type="text"
-                    placeholder="123456"
-                    maxLength={6}
-                    {...register('otp')}
-                    disabled={isVerifying}
-                    className="text-center text-lg tracking-widest"
-                  />
-                  {errors.otp && (
-                    <p className="text-sm text-red-500">{errors.otp.message}</p>
-                  )}
-                  <p className="text-xs text-gray-500">
-                    Enter the 6-digit code sent to {formatPhoneNumber(user.phone_number)}
-                  </p>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    type="submit"
-                    disabled={isVerifying}
-                    className="flex-1"
-                  >
-                    {isVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Verify OTP
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleSendOTP}
-                    disabled={isLoading || countdown > 0}
-                  >
-                    {countdown > 0 ? `${countdown}s` : 'Resend'}
-                  </Button>
-                </div>
-              </form>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+      {/* OTP Form */}
+      <OTPForm />
+    </div>
   );
 }
