@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Smartphone, CheckCircle, AlertCircle, Send, RefreshCw } from 'lucide-react';
+import { Loader2, Smartphone, CheckCircle, AlertCircle, Send, RefreshCw, User, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useIM3Store } from '@/lib/store/im3-store';
 import { useAuth } from '@/lib/hooks/use-auth';
 
@@ -29,6 +30,7 @@ export function IM3LinkForm() {
     sendOTP,
     verifyOTP,
     loadProfile,
+    loadBalance,
     clearError,
     isLoading,
     isVerifying,
@@ -36,6 +38,7 @@ export function IM3LinkForm() {
     otpSent,
     isLinked,
     profile,
+    isLoadingBalance,
   } = useIM3Store();
 
   const {
@@ -72,7 +75,7 @@ export function IM3LinkForm() {
     try {
       clearError();
       await sendOTP();
-      setCountdown(60); // 60 second countdown
+      setCountdown(60);
       toast.success('OTP sent!', {
         description: `OTP has been sent to ${user.phone_number}`,
       });
@@ -88,7 +91,6 @@ export function IM3LinkForm() {
       clearError();
       await verifyOTP(data.otp);
 
-      // Show success message
       toast.success('IM3 account linked!', {
         description: 'Your IM3 account has been successfully linked. The page will refresh automatically.',
         duration: 3000,
@@ -96,7 +98,6 @@ export function IM3LinkForm() {
 
       reset();
 
-      // Small delay then refresh the page to ensure all data is synced
       setTimeout(() => {
         window.location.reload();
       }, 2000);
@@ -146,37 +147,78 @@ export function IM3LinkForm() {
             Your IM3 account is successfully linked to your profile
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          {/* Profile Header */}
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={profile.img} alt={profile.name} />
+              <AvatarFallback>
+                <User className="h-8 w-8" />
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h3 className="text-lg font-semibold">{profile.name || 'IM3 User'}</h3>
+              <p className="text-sm text-gray-600">{formatPhoneNumber(profile.mob)}</p>
+              <Badge variant={profile.status === 'ACTIVE' ? 'default' : 'destructive'} className="mt-1">
+                {profile.status}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Profile Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-medium">Mobile Number</Label>
-              <p className="text-sm text-gray-600">
-                {profile.mob ? formatPhoneNumber(profile.mob) : 'N/A'}
-              </p>
+              <p className="text-sm text-gray-600">{formatPhoneNumber(profile.mob)}</p>
             </div>
             <div>
               <Label className="text-sm font-medium">Account Name</Label>
               <p className="text-sm text-gray-600">{profile.name || 'N/A'}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium">Balance</Label>
-              <p className="text-sm text-gray-600">{formatBalance(profile.balance)}</p>
+              <Label className="text-sm font-medium">Email</Label>
+              <p className="text-sm text-gray-600">{profile.email || 'Not provided'}</p>
             </div>
             <div>
-              <Label className="text-sm font-medium">Status</Label>
-              <Badge variant={profile.status === 'ACTIVE' ? 'default' : 'destructive'}>
-                {profile.status || 'Unknown'}
-              </Badge>
+              <Label className="text-sm font-medium">User Type</Label>
+              <p className="text-sm text-gray-600">{profile.usertype || 'N/A'}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Balance</Label>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-600">{formatBalance(profile.balance)}</p>
+                {isLoadingBalance && <Loader2 className="h-3 w-3 animate-spin" />}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Membership ID</Label>
+              <p className="text-sm text-gray-600">{profile.membershipid || 'N/A'}</p>
             </div>
           </div>
+
+          {/* Alerts */}
+          {profile.alerts && profile.alerts.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Account Alerts</Label>
+              {profile.alerts.map((alert, index) => (
+                <Alert key={index}>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>{alert.title}</strong><br />
+                    {alert.description}
+                  </AlertDescription>
+                </Alert>
+              ))}
+            </div>
+          )}
 
           <Button
             onClick={handleRefresh}
             variant="outline"
-            disabled={isLoading}
+            disabled={isLoading || isLoadingBalance}
             className="w-full"
           >
-            {isLoading ? (
+            {(isLoading || isLoadingBalance) ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="mr-2 h-4 w-4" />

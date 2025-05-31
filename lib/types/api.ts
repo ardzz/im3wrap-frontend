@@ -26,12 +26,60 @@ export interface UserProfile {
   updated_at: string | null;
 }
 
-// IM3 types
+// IM3 types - Updated to match actual API response
+export interface IM3ProfileData {
+  alerts: Array<{
+    buttontext: string;
+    description: string;
+    external: string;
+    fallback: number;
+    group: string;
+    icon: string;
+    pageurl: string;
+    title: string;
+  }>;
+  cid: string;
+  consent: Array<{
+    cdt: string;
+    cnst: string;
+    key: string;
+  }>;
+  currenttier: string;
+  email: string;
+  enrollmentstatus: string;
+  evf: string;
+  fname: string;
+  img: string;
+  imkas: boolean;
+  managenumber: boolean;
+  membershipid: string;
+  mig: string;
+  mob: string;
+  p2p_status: boolean;
+  pushid: string;
+  showreferral: boolean;
+  uniqueid: string;
+  userclass: string;
+  username: string;
+  utype: string;
+  whitelisted: boolean;
+}
+
 export interface IM3Profile {
   mob: string;
   name: string;
   balance: number;
   status: string;
+  email: string;
+  usertype: string;
+  membershipid: string;
+  img: string;
+  alerts: Array<{
+    title: string;
+    description: string;
+    buttontext: string;
+    icon: string;
+  }>;
 }
 
 // Authentication types

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { im3Api, IM3Profile } from '@/lib/api/im3';
+import { im3Api, transformIM3Profile } from '@/lib/api/im3';
+import { IM3Profile } from '@/lib/types/api';
 
 interface IM3State {
   profile: IM3Profile | null;
@@ -9,6 +10,8 @@ interface IM3State {
   transactionId: string | null;
   isVerifying: boolean;
   isLinked: boolean;
+  balance: number | null;
+  isLoadingBalance: boolean;
 }
 
 interface IM3Actions {
@@ -28,6 +31,8 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
   transactionId: null,
   isVerifying: false,
   isLinked: false,
+  balance: null,
+  isLoadingBalance: false,
 
   // Actions
   sendOTP: async () => {
@@ -93,25 +98,14 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
       set({ isLoading: true, error: null });
       const response = await im3Api.getProfile();
 
-      // Validate the profile data
-      const profileData = response.data;
-      if (profileData && typeof profileData === 'object') {
-        // Ensure balance is a valid number
-        const validatedProfile: IM3Profile = {
-          mob: profileData.mob || '',
-          name: profileData.name || '',
-          balance: typeof profileData.balance === 'number' && !isNaN(profileData.balance) ? profileData.balance : 0,
-          status: profileData.status || 'UNKNOWN',
-        };
+      // Transform the API response to our internal format
+      const profileData = transformIM3Profile(response.data);
 
-        set({
-          profile: validatedProfile,
-          isLoading: false,
-          isLinked: true,
-        });
-      } else {
-        throw new Error('Invalid profile data received');
-      }
+      set({
+        profile: profileData,
+        isLoading: false,
+        isLinked: true,
+      });
     } catch (error: any) {
       if (error.response?.status === 400) {
         // IM3 not linked yet
@@ -119,7 +113,8 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
           profile: null,
           isLoading: false,
           isLinked: false,
-          error: null, // Clear error for "not linked" state
+          error: null,
+          balance: null,
         });
       } else {
         const errorMessage = error.response?.data?.error?.message || 'Failed to load IM3 profile';
@@ -143,5 +138,7 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
     transactionId: null,
     isVerifying: false,
     isLinked: false,
+    balance: null,
+    isLoadingBalance: false,
   }),
 }));
