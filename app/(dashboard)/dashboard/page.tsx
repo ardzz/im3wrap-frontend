@@ -383,10 +383,6 @@ export default function DashboardPage() {
                       <p className="text-sm sm:text-base text-gray-900">{profile.mob}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-500 block mb-1">Account Name</label>
-                      <p className="text-sm sm:text-base text-gray-900">{profile.name}</p>
-                    </div>
-                    <div>
                       <label className="text-sm font-medium text-gray-500 block mb-2">Account Status</label>
                       <Badge
                         variant={profile.status === 'ACTIVE' ? 'default' : 'destructive'}
@@ -394,10 +390,6 @@ export default function DashboardPage() {
                       >
                         {profile.status}
                       </Badge>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-500 block mb-1">Current Balance</label>
-                      <p className="text-lg font-semibold text-green-600">{formatBalance(profile.balance)}</p>
                     </div>
                   </div>
                 </div>
