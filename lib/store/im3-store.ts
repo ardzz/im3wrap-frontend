@@ -7,6 +7,7 @@ interface IM3State {
   error: string | null;
   otpSent: boolean;
   transactionId: string | null;
+  isLinking: boolean;
 }
 
 interface IM3Actions {
@@ -15,6 +16,7 @@ interface IM3Actions {
   loadProfile: () => Promise<void>;
   clearError: () => void;
   reset: () => void;
+  setLinking: (linking: boolean) => void;
 }
 
 export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
@@ -24,11 +26,12 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
   error: null,
   otpSent: false,
   transactionId: null,
+  isLinking: false,
 
   // Actions
   sendOTP: async () => {
     try {
-      set({ isLoading: true, error: null });
+      set({ isLoading: true, error: null, isLinking: true });
       const response = await im3Api.sendOTP();
       set({
         otpSent: true,
@@ -39,6 +42,7 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
       set({
         error: error.response?.data?.error?.message || 'Failed to send OTP',
         isLoading: false,
+        isLinking: false,
       });
       throw error;
     }
@@ -49,7 +53,12 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
       set({ isLoading: true, error: null });
       const response = await im3Api.verifyOTP(otp);
       if (response.data.verified) {
-        set({ isLoading: false, otpSent: false });
+        set({
+          isLoading: false,
+          otpSent: false,
+          isLinking: false,
+          transactionId: null,
+        });
         // Load profile after successful verification
         await get().loadProfile();
       } else {
@@ -80,8 +89,11 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
         error: error.response?.data?.error?.message || 'Failed to load profile',
         isLoading: false,
       });
+      throw error;
     }
   },
+
+  setLinking: (linking: boolean) => set({ isLinking: linking }),
 
   clearError: () => set({ error: null }),
 
@@ -90,5 +102,6 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
     error: null,
     otpSent: false,
     transactionId: null,
+    isLinking: false,
   }),
 }));

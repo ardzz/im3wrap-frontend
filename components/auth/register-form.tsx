@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/lib/hooks/use-auth';
+import Link from 'next/link';
 
 const registerSchema = z.object({
   username: z
@@ -31,7 +33,7 @@ const registerSchema = z.object({
     .or(z.literal('')),
   phone_number: z
     .string()
-    .regex(/^[0-9+\-\s()]+$/, 'Invalid phone number format')
+    .regex(/^[0-9+\-\s()]*$/, 'Invalid phone number format')
     .optional()
     .or(z.literal('')),
 });
@@ -54,17 +56,30 @@ export function RegisterForm() {
   const onSubmit = async (data: RegisterFormData) => {
     try {
       clearError();
-      const registrationData = {
+      const registerData = {
         username: data.username,
         password: data.password,
         ...(data.email && { email: data.email }),
         ...(data.phone_number && { phone_number: data.phone_number }),
       };
-      await registerUser(registrationData);
+
+      await registerUser(registerData);
+      toast.success("Account created!", {
+        description: "Your account has been created successfully.",
+      });
       router.push('/dashboard');
     } catch (error) {
-      // Error is handled by the store
+      toast.error("Registration failed", {
+        description: "Please check your information and try again.",
+      });
     }
+  };
+
+  // Prevent accidental form submission when clicking other elements
+  const handleSignInClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push('/login');
   };
 
   return (
@@ -72,7 +87,7 @@ export function RegisterForm() {
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
         <CardDescription className="text-center">
-          Sign up to start using IM3Wrap
+          Create a new account to get started
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -84,10 +99,12 @@ export function RegisterForm() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="username">Username *</Label>
+            <Label htmlFor="username">Username</Label>
             <Input
               id="username"
-              placeholder="Enter your username"
+              type="text"
+              autoComplete="username"
+              placeholder="Choose a username"
               {...register('username')}
               disabled={isLoading}
             />
@@ -97,12 +114,13 @@ export function RegisterForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password *</Label>
+            <Label htmlFor="password">Password</Label>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Enter your password"
+                autoComplete="new-password"
+                placeholder="Create a password"
                 {...register('password')}
                 disabled={isLoading}
               />
@@ -111,8 +129,13 @@ export function RegisterForm() {
                 variant="ghost"
                 size="sm"
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowPassword(!showPassword);
+                }}
                 disabled={isLoading}
+                tabIndex={-1}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -131,6 +154,7 @@ export function RegisterForm() {
             <Input
               id="email"
               type="email"
+              autoComplete="email"
               placeholder="Enter your email"
               {...register('email')}
               disabled={isLoading}
@@ -144,6 +168,8 @@ export function RegisterForm() {
             <Label htmlFor="phone_number">Phone Number (Optional)</Label>
             <Input
               id="phone_number"
+              type="tel"
+              autoComplete="tel"
               placeholder="Enter your phone number"
               {...register('phone_number')}
               disabled={isLoading}
@@ -151,23 +177,34 @@ export function RegisterForm() {
             {errors.phone_number && (
               <p className="text-sm text-red-500">{errors.phone_number.message}</p>
             )}
+            <p className="text-xs text-gray-500">
+              Required for IM3 account linking
+            </p>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading}
+            onClick={(e) => {
+              // Ensure this only triggers form submission
+              e.stopPropagation();
+            }}
+          >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create Account
           </Button>
-          <p className="text-sm text-center text-gray-600">
+          <div className="text-sm text-center text-gray-600">
             Already have an account?{' '}
-            <Button
-              variant="link"
-              className="p-0 h-auto"
-              onClick={() => router.push('/login')}
+            <Link
+              href="/login"
+              onClick={handleSignInClick}
+              className="font-medium text-primary hover:underline"
             >
               Sign in
-            </Button>
-          </p>
+            </Link>
+          </div>
         </CardFooter>
       </form>
     </Card>

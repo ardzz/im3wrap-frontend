@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Smartphone, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
+import { Smartphone, AlertCircle, CheckCircle, RefreshCw, ExternalLink } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,10 +17,10 @@ export function IM3ProfileCard() {
 
   useEffect(() => {
     setIsLinked(!!user?.token_id);
-    if (user?.token_id) {
+    if (user?.token_id && !profile) {
       loadProfile();
     }
-  }, [user?.token_id, loadProfile]);
+  }, [user?.token_id, profile, loadProfile]);
 
   const handleRefresh = () => {
     if (isLinked) {
@@ -55,9 +55,12 @@ export function IM3ProfileCard() {
               Your IM3 account is not linked yet. Go to the IM3 section to link your account.
             </AlertDescription>
           </Alert>
-          <div className="mt-4">
-            <Button asChild className="w-full">
-              <a href="/im3">Link IM3 Account</a>
+          <div className="mt-4 flex gap-2">
+            <Button asChild className="flex-1">
+              <a href="/im3">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Link IM3 Account
+              </a>
             </Button>
           </div>
         </CardContent>
@@ -100,47 +103,65 @@ export function IM3ProfileCard() {
           </Alert>
         )}
 
-        {isLoading ? (
+        {isLoading && !profile ? (
           <div className="space-y-3">
             <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
             <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
             <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
           </div>
         ) : profile ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Mobile Number</p>
-                <p className="text-lg font-semibold">+{profile.mob}</p>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Mobile Number</p>
+                  <p className="text-lg font-semibold">+{profile.mob}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Account Holder</p>
+                  <p className="text-lg">{profile.name}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Account Holder</p>
-                <p className="text-lg">{profile.name}</p>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Balance</p>
+                  <p className="text-lg font-semibold text-green-600">
+                    {formatCurrency(profile.balance)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Status</p>
+                  <Badge
+                    variant={profile.status === 'ACTIVE' ? 'default' : 'destructive'}
+                    className="text-sm"
+                  >
+                    {profile.status}
+                  </Badge>
+                </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Balance</p>
-                <p className="text-lg font-semibold text-green-600">
-                  {formatCurrency(profile.balance)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Status</p>
-                <Badge
-                  variant={profile.status === 'ACTIVE' ? 'default' : 'destructive'}
-                  className="text-sm"
-                >
-                  {profile.status}
-                </Badge>
+
+            <div className="pt-4 border-t">
+              <div className="flex gap-2">
+                <Button asChild variant="outline" className="flex-1">
+                  <a href="/packages">
+                    <Smartphone className="mr-2 h-4 w-4" />
+                    Browse Packages
+                  </a>
+                </Button>
+                <Button asChild variant="outline" className="flex-1">
+                  <a href="/transactions">
+                    View Transactions
+                  </a>
+                </Button>
               </div>
             </div>
-          </div>
+          </>
         ) : (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Unable to load IM3 profile. Please try refreshing.
+              Unable to load IM3 profile. Please try refreshing or check your connection.
             </AlertDescription>
           </Alert>
         )}

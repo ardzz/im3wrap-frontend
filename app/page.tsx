@@ -1,26 +1,28 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/hooks/use-auth';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 export default function Home() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, _hasHydrated } = useAuthStore();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
+    if (_hasHydrated && !isLoading && !hasRedirected) {
+      setHasRedirected(true);
       if (isAuthenticated) {
-        router.push('/dashboard');
+        router.replace('/dashboard');
       } else {
-        router.push('/login');
+        router.replace('/login');
       }
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, _hasHydrated, hasRedirected, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div>Loading...</div>
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
     </div>
   );
 }

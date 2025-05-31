@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { UserProfile } from '@/lib/types/api';
 import { authApi } from '@/lib/api/auth';
 import { apiClient } from '@/lib/api/client';
@@ -9,6 +9,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  _hasHydrated: boolean; // Add hydration flag
 }
 
 interface AuthActions {
@@ -19,6 +20,7 @@ interface AuthActions {
   updateProfile: (data: { email?: string; phone_number?: string }) => Promise<void>;
   changePassword: (data: { old_password: string; new_password: string }) => Promise<void>;
   clearError: () => void;
+  setHasHydrated: (hasHydrated: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()(
@@ -29,6 +31,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      _hasHydrated: false,
 
       // Actions
       login: async (username: string, password: string) => {
@@ -72,29 +75,48 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
 
       logout: () => {
+        // Clear API client auth
         apiClient.clearAuth();
+
+        // Clear store state completely
         set({
           user: null,
           isAuthenticated: false,
           error: null,
+          isLoading: false,
+          _hasHydrated: true, // Keep hydration flag
         });
+
+        // Clear all auth-related storage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth-storage');
+          localStorage.removeItem('access_token');
+
+          // Force clear the persist storage
+          const storage = createJSONStorage(() => localStorage);
+          storage.removeItem('auth-storage');
+        }
       },
 
       loadUser: async () => {
+        const currentState = get();
+
+        // Prevent loading if already loading or if no authentication
+        if (currentState.isLoading || !currentState.isAuthenticated) {
+          return;
+        }
+
         try {
           set({ isLoading: true, error: null });
           const response = await authApi.getProfile();
+
           set({
             user: response.data,
-            isAuthenticated: true,
             isLoading: false,
           });
         } catch (error: any) {
-          set({
-            user: null,
-            isAuthenticated: false,
-            isLoading: false,
-          });
+          // If load user fails, clear everything
+          get().logout();
         }
       },
 
@@ -102,6 +124,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         try {
           set({ isLoading: true, error: null });
           const response = await authApi.updateProfile(data);
+
           set({
             user: response.data,
             isLoading: false,
@@ -130,13 +153,36 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
 
       clearError: () => set({ error: null }),
+
+      setHasHydrated: (hasHydrated: boolean) => set({ _hasHydrated: hasHydrated }),
     }),
     {
       name: 'auth-storage',
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Failed to rehydrate auth storage:', error);
+          return;
+        }
+
+        if (state) {
+          // Check if token exists in localStorage
+          const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+
+          if (!token) {
+            // No token found, clear the rehydrated state
+            state.user = null;
+            state.isAuthenticated = false;
+          }
+
+          // Mark as hydrated
+          state._hasHydrated = true;
+        }
+      },
     }
   )
 );

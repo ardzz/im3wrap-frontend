@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import { ErrorResponse } from '@/lib/types/api';
 
 class ApiClient {
-  private instance: AxiosInstance;
+  private readonly instance: AxiosInstance;
   private token: string | null = null;
 
   constructor() {
@@ -28,6 +28,7 @@ class ApiClient {
       (error: AxiosError<ErrorResponse>) => {
         if (error.response?.status === 401) {
           this.clearAuth();
+          // Force a full page reload to clear all state
           if (typeof window !== 'undefined') {
             window.location.href = '/login';
           }
@@ -50,6 +51,7 @@ class ApiClient {
     delete this.instance.defaults.headers.common['Authorization'];
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token');
+      localStorage.removeItem('auth-storage');
     }
   }
 
