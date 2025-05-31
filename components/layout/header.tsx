@@ -13,12 +13,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, Settings, LogOut, Package, Smartphone, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, Settings, LogOut, Package, Smartphone, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 
 export function Header() {
-  const { user, logout } = useAuth();
-  const { isIM3Linked, profile } = useIM3();
+  const { user, logout, refreshUser } = useAuth();
+  const { isIM3Linked, profile, loadProfile, isLoading } = useIM3();
 
   const getInitials = (username: string) => {
     return username.slice(0, 2).toUpperCase();
@@ -38,6 +38,17 @@ export function Header() {
       sessionStorage.clear();
     }
     window.location.replace('/login');
+  };
+
+  const handleRefreshStatus = async () => {
+    try {
+      await Promise.all([
+        refreshUser(),
+        loadProfile()
+      ]);
+    } catch (error) {
+      console.error('Failed to refresh status:', error);
+    }
   };
 
   return (
@@ -85,13 +96,27 @@ export function Header() {
 
           <div className="flex items-center gap-4">
             {/* IM3 Status Badge */}
-            <Badge
-              variant={isIM3Linked ? "outline" : "destructive"}
-              className={isIM3Linked ? "text-green-600 border-green-600" : ""}
-            >
-              <Smartphone className="h-3 w-3 mr-1" />
-              {isIM3Linked ? "IM3 Linked" : "Not Linked"}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant={isIM3Linked ? "outline" : "destructive"}
+                className={isIM3Linked ? "text-green-600 border-green-600" : ""}
+              >
+                <Smartphone className="h-3 w-3 mr-1" />
+                {isIM3Linked ? "IM3 Linked" : "Not Linked"}
+              </Badge>
+
+              {/* Refresh button for status */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRefreshStatus}
+                disabled={isLoading}
+                className="h-6 w-6 p-0"
+                title="Refresh IM3 Status"
+              >
+                <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
 
             {/* Balance if IM3 is linked and has valid balance */}
             {isIM3Linked && profile && typeof profile.balance === 'number' && !isNaN(profile.balance) && (
@@ -124,6 +149,9 @@ export function Header() {
                       <span className="text-xs">
                         {isIM3Linked ? 'IM3 Linked' : 'IM3 Not Linked'}
                       </span>
+                      {user?.token_id && (
+                        <span className="text-xs text-green-600">({user.token_id.slice(0, 8)}...)</span>
+                      )}
                     </div>
                     {isIM3Linked && profile && (
                       <div className="text-xs text-green-600">
@@ -132,6 +160,11 @@ export function Header() {
                     )}
                   </div>
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleRefreshStatus} disabled={isLoading}>
+                  <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span>Refresh Status</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center">

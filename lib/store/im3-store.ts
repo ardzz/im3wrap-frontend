@@ -58,6 +58,15 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
       if (response.data.verified) {
         // OTP verified, load profile to confirm linking
         await get().loadProfile();
+
+        // IMPORTANT: Refresh user profile to get updated token_id
+        try {
+          const { useAuthStore } = await import('./auth-store');
+          await useAuthStore.getState().loadUser();
+        } catch (authError) {
+          console.warn('Failed to refresh user profile after IM3 linking:', authError);
+        }
+
         set({
           isVerifying: false,
           isLinked: true,

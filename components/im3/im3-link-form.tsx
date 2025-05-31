@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Smartphone, CheckCircle, AlertCircle, Send } from 'lucide-react';
+import { Loader2, Smartphone, CheckCircle, AlertCircle, Send, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ type OTPFormData = z.infer<typeof otpSchema>;
 
 export function IM3LinkForm() {
   const [countdown, setCountdown] = useState(0);
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const {
     sendOTP,
     verifyOTP,
@@ -87,10 +87,20 @@ export function IM3LinkForm() {
     try {
       clearError();
       await verifyOTP(data.otp);
+
+      // Show success message
       toast.success('IM3 account linked!', {
-        description: 'Your IM3 account has been successfully linked.',
+        description: 'Your IM3 account has been successfully linked. The page will refresh automatically.',
+        duration: 3000,
       });
+
       reset();
+
+      // Small delay then refresh the page to ensure all data is synced
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+
     } catch (error) {
       toast.error('OTP verification failed', {
         description: 'Please check your OTP and try again.',
@@ -105,7 +115,26 @@ export function IM3LinkForm() {
     return phone;
   };
 
-  if (isLinked && profile) {
+  const formatBalance = (balance: number | undefined | null) => {
+    if (typeof balance !== 'number' || isNaN(balance)) {
+      return 'N/A';
+    }
+    return `Rp ${balance.toLocaleString('id-ID')}`;
+  };
+
+  const handleRefresh = async () => {
+    try {
+      await Promise.all([
+        loadProfile(),
+        refreshUser()
+      ]);
+      toast.success('Status refreshed!');
+    } catch (error) {
+      toast.error('Failed to refresh status');
+    }
+  };
+
+  if ((isLinked || user?.token_id) && profile) {
     return (
       <Card>
         <CardHeader>
@@ -121,23 +150,37 @@ export function IM3LinkForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-medium">Mobile Number</Label>
-              <p className="text-sm text-gray-600">{formatPhoneNumber(profile.mob)}</p>
+              <p className="text-sm text-gray-600">
+                {profile.mob ? formatPhoneNumber(profile.mob) : 'N/A'}
+              </p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Account Name</Label>
+              <p className="text-sm text-gray-600">{profile.name || 'N/A'}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Balance</Label>
+              <p className="text-sm text-gray-600">{formatBalance(profile.balance)}</p>
             </div>
             <div>
               <Label className="text-sm font-medium">Status</Label>
               <Badge variant={profile.status === 'ACTIVE' ? 'default' : 'destructive'}>
-                {profile.status}
+                {profile.status || 'Unknown'}
               </Badge>
             </div>
           </div>
 
           <Button
-            onClick={() => loadProfile()}
+            onClick={handleRefresh}
             variant="outline"
             disabled={isLoading}
             className="w-full"
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
             Refresh Profile
           </Button>
         </CardContent>
