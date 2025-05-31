@@ -9,7 +9,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  _hasHydrated: boolean; // Add hydration flag
+  _hasHydrated: boolean;
 }
 
 interface AuthActions {
@@ -39,12 +39,29 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           set({ isLoading: true, error: null });
           const response = await authApi.login({ username, password });
 
+          // Set token first
           apiClient.setToken(response.data.access_token);
-          set({
-            user: response.data.user,
-            isAuthenticated: true,
-            isLoading: false,
-          });
+
+          // The login response might not have complete user data
+          // So immediately fetch fresh user data
+          try {
+            const userResponse = await authApi.getProfile();
+
+            // Set complete user data from profile endpoint
+            set({
+              user: userResponse.data,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          } catch (profileError) {
+            // Fallback to login response data if profile fetch fails
+            console.warn('Failed to fetch complete profile, using login data:', profileError);
+            set({
+              user: response.data.user,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          }
         } catch (error: any) {
           set({
             error: error.response?.data?.error?.message || 'Login failed',
@@ -59,12 +76,27 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           set({ isLoading: true, error: null });
           const response = await authApi.register(data);
 
+          // Set token first
           apiClient.setToken(response.data.access_token);
-          set({
-            user: response.data.user,
-            isAuthenticated: true,
-            isLoading: false,
-          });
+
+          // Registration response should have complete data, but let's be safe
+          try {
+            const userResponse = await authApi.getProfile();
+
+            set({
+              user: userResponse.data,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          } catch (profileError) {
+            // Fallback to registration response data
+            console.warn('Failed to fetch complete profile, using registration data:', profileError);
+            set({
+              user: response.data.user,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+          }
         } catch (error: any) {
           set({
             error: error.response?.data?.error?.message || 'Registration failed',
@@ -89,19 +121,25 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
         // Clear all auth-related storage
         if (typeof window !== 'undefined') {
-          localStorage.removeItem('auth-storage');
-          localStorage.removeItem('access_token');
+          try {
+            localStorage.removeItem('auth-storage');
+            localStorage.removeItem('access_token');
 
-          // Force clear the persist storage
-          const storage = createJSONStorage(() => localStorage);
-          storage.removeItem('auth-storage');
+            const storage = createJSONStorage(() => localStorage);
+            if (storage && typeof storage.removeItem === 'function') {
+              storage.removeItem('auth-storage');
+            }
+          } catch (error) {
+            console.warn('Failed to clear storage:', error);
+            localStorage.clear();
+          }
         }
       },
 
       loadUser: async () => {
         const currentState = get();
 
-        // Prevent loading if already loading or if no authentication
+        // Prevent loading if already loading or not authenticated
         if (currentState.isLoading || !currentState.isAuthenticated) {
           return;
         }
@@ -115,8 +153,15 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             isLoading: false,
           });
         } catch (error: any) {
-          // If load user fails, clear everything
-          get().logout();
+          console.error('Failed to load user:', error);
+          if (error.response?.status === 401) {
+            get().logout();
+          } else {
+            set({
+              error: error.response?.data?.error?.message || 'Failed to load user data',
+              isLoading: false,
+            });
+          }
         }
       },
 
@@ -170,16 +215,16 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
 
         if (state) {
-          // Check if token exists in localStorage
           const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
           if (!token) {
-            // No token found, clear the rehydrated state
             state.user = null;
             state.isAuthenticated = false;
+          } else {
+            // Set the token in API client
+            apiClient.setToken(token);
           }
 
-          // Mark as hydrated
           state._hasHydrated = true;
         }
       },
