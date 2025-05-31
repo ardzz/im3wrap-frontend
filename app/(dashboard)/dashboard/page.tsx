@@ -51,7 +51,6 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <p><strong>ID:</strong> {user.id}</p>
             <p><strong>Username:</strong> {user.username}</p>
             <p><strong>Email:</strong> {user.email || 'Not provided'}</p>
             <p><strong>Phone:</strong> {user.phone_number || 'Not provided'}</p>

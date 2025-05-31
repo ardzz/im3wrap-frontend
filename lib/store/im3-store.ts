@@ -7,7 +7,8 @@ interface IM3State {
   error: string | null;
   otpSent: boolean;
   transactionId: string | null;
-  isLinking: boolean;
+  isVerifying: boolean;
+  isLinked: boolean;
 }
 
 interface IM3Actions {
@@ -16,7 +17,6 @@ interface IM3Actions {
   loadProfile: () => Promise<void>;
   clearError: () => void;
   reset: () => void;
-  setLinking: (linking: boolean) => void;
 }
 
 export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
@@ -26,13 +26,15 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
   error: null,
   otpSent: false,
   transactionId: null,
-  isLinking: false,
+  isVerifying: false,
+  isLinked: false,
 
   // Actions
   sendOTP: async () => {
     try {
-      set({ isLoading: true, error: null, isLinking: true });
+      set({ isLoading: true, error: null });
       const response = await im3Api.sendOTP();
+
       set({
         otpSent: true,
         transactionId: response.data.transid,
@@ -42,7 +44,7 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
       set({
         error: error.response?.data?.error?.message || 'Failed to send OTP',
         isLoading: false,
-        isLinking: false,
+        otpSent: false,
       });
       throw error;
     }
@@ -50,27 +52,28 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
 
   verifyOTP: async (otp: string) => {
     try {
-      set({ isLoading: true, error: null });
+      set({ isVerifying: true, error: null });
       const response = await im3Api.verifyOTP(otp);
+
       if (response.data.verified) {
+        // OTP verified, load profile to confirm linking
+        await get().loadProfile();
         set({
-          isLoading: false,
+          isVerifying: false,
+          isLinked: true,
           otpSent: false,
-          isLinking: false,
           transactionId: null,
         });
-        // Load profile after successful verification
-        await get().loadProfile();
       } else {
         set({
-          error: 'OTP verification failed',
-          isLoading: false,
+          error: 'Invalid OTP code',
+          isVerifying: false,
         });
       }
     } catch (error: any) {
       set({
         error: error.response?.data?.error?.message || 'OTP verification failed',
-        isLoading: false,
+        isVerifying: false,
       });
       throw error;
     }
@@ -80,28 +83,56 @@ export const useIM3Store = create<IM3State & IM3Actions>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       const response = await im3Api.getProfile();
-      set({
-        profile: response.data,
-        isLoading: false,
-      });
+
+      // Validate the profile data
+      const profileData = response.data;
+      if (profileData && typeof profileData === 'object') {
+        // Ensure balance is a valid number
+        const validatedProfile: IM3Profile = {
+          mob: profileData.mob || '',
+          name: profileData.name || '',
+          balance: typeof profileData.balance === 'number' && !isNaN(profileData.balance) ? profileData.balance : 0,
+          status: profileData.status || 'UNKNOWN',
+        };
+
+        set({
+          profile: validatedProfile,
+          isLoading: false,
+          isLinked: true,
+        });
+      } else {
+        throw new Error('Invalid profile data received');
+      }
     } catch (error: any) {
-      set({
-        error: error.response?.data?.error?.message || 'Failed to load profile',
-        isLoading: false,
-      });
-      throw error;
+      if (error.response?.status === 400) {
+        // IM3 not linked yet
+        set({
+          profile: null,
+          isLoading: false,
+          isLinked: false,
+          error: null, // Clear error for "not linked" state
+        });
+      } else {
+        const errorMessage = error.response?.data?.error?.message || 'Failed to load IM3 profile';
+        set({
+          error: errorMessage,
+          isLoading: false,
+          isLinked: false,
+        });
+        console.error('IM3 Profile load error:', error);
+      }
     }
   },
-
-  setLinking: (linking: boolean) => set({ isLinking: linking }),
 
   clearError: () => set({ error: null }),
 
   reset: () => set({
     profile: null,
+    isLoading: false,
     error: null,
     otpSent: false,
     transactionId: null,
-    isLinking: false,
+    isVerifying: false,
+    isLinked: false,
   }),
 }));

@@ -1,149 +1,90 @@
 'use client';
 
-import { useEffect } from 'react';
-import { LinkAccountForm } from '@/components/im3/link-account-form';
-import { IM3ProfileCard } from '@/components/profile/im3-profile-card';
-import { useAuth } from '@/lib/hooks/use-auth';
-import { useIM3 } from '@/lib/hooks/use-im3';
+import { IM3LinkForm } from '@/components/im3/im3-link-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Smartphone, Shield, Zap, CreditCard } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Smartphone, Info } from 'lucide-react';
 
 export default function IM3Page() {
-  const { user } = useAuth();
-  const { loadProfile } = useIM3();
-  const isLinked = !!user?.token_id;
-
-  useEffect(() => {
-    if (isLinked) {
-      loadProfile();
-    }
-  }, [isLinked, loadProfile]);
-
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">IM3 Integration</h1>
-        <p className="text-gray-600 mt-2">
-          Link and manage your IM3 account to access packages and services.
-        </p>
-      </div>
-
-      {/* Features Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Shield className="h-5 w-5 text-blue-600" />
-              Secure
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">
-              OTP verification ensures secure account linking and transactions.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Zap className="h-5 w-5 text-yellow-600" />
-              Instant
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">
-              Real-time package activation and immediate service access.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <CreditCard className="h-5 w-5 text-green-600" />
-              Balance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">
-              View your current balance and manage your IM3 account funds.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Smartphone className="h-5 w-5 text-purple-600" />
-              Packages
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">
-              Purchase and manage data, voice, and SMS packages easily.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div className="container mx-auto py-8 space-y-6">
+      <div className="flex items-center gap-3 mb-8">
+        <Smartphone className="h-8 w-8 text-primary" />
         <div>
-          <LinkAccountForm />
+          <h1 className="text-3xl font-bold">IM3 Account</h1>
+          <p className="text-gray-600">Manage your IM3 account integration</p>
         </div>
-
-        {isLinked && (
-          <div>
-            <IM3ProfileCard />
-          </div>
-        )}
       </div>
 
-      {/* Instructions Section */}
-      {!isLinked && (
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          Linking your IM3 account allows you to purchase packages directly and view your balance.
+          You'll need to verify your phone number with an OTP code sent via SMS.
+        </AlertDescription>
+      </Alert>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <IM3LinkForm />
+
         <Card>
           <CardHeader>
-            <CardTitle>How to Link Your IM3 Account</CardTitle>
+            <CardTitle>How it works</CardTitle>
             <CardDescription>
-              Follow these simple steps to connect your IM3 account
+              Simple steps to link your IM3 account
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-blue-600 font-bold">1</span>
-                </div>
-                <h3 className="font-medium mb-2">Add Phone Number</h3>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium">
+                1
+              </div>
+              <div>
+                <h4 className="font-medium">Add Phone Number</h4>
                 <p className="text-sm text-gray-600">
-                  Make sure your phone number is added to your profile settings.
+                  Ensure your IM3 phone number is added to your profile
                 </p>
               </div>
+            </div>
 
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-blue-600 font-bold">2</span>
-                </div>
-                <h3 className="font-medium mb-2">Request OTP</h3>
+            <div className="flex items-start gap-3">
+              <div className="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium">
+                2
+              </div>
+              <div>
+                <h4 className="font-medium">Request OTP</h4>
                 <p className="text-sm text-gray-600">
-                  Click "Start Linking Process" to receive an OTP on your phone.
+                  Click "Send OTP" to receive a verification code via SMS
                 </p>
               </div>
+            </div>
 
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-blue-600 font-bold">3</span>
-                </div>
-                <h3 className="font-medium mb-2">Verify & Link</h3>
+            <div className="flex items-start gap-3">
+              <div className="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium">
+                3
+              </div>
+              <div>
+                <h4 className="font-medium">Verify Code</h4>
                 <p className="text-sm text-gray-600">
-                  Enter the OTP to verify and link your IM3 account successfully.
+                  Enter the 6-digit code to link your IM3 account
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium">
+                ✓
+              </div>
+              <div>
+                <h4 className="font-medium">Ready to Use</h4>
+                <p className="text-sm text-gray-600">
+                  Start purchasing packages and managing your IM3 account
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
-      )}
+      </div>
     </div>
   );
 }

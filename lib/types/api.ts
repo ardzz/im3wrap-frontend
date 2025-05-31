@@ -11,7 +11,7 @@ export interface ErrorResponse {
   error: {
     code: string;
     message: string;
-    details: Record<string, never>;
+    details: Record<string, any>;
   };
 }
 
@@ -24,6 +24,14 @@ export interface UserProfile {
   token_id: string | null;
   created_at: string | null;
   updated_at: string | null;
+}
+
+// IM3 types
+export interface IM3Profile {
+  mob: string;
+  name: string;
+  balance: number;
+  status: string;
 }
 
 // Authentication types

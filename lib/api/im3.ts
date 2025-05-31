@@ -22,19 +22,23 @@ export interface VerifyOTPResponse extends SuccessResponse {
   };
 }
 
+export interface IM3ProfileResponse extends SuccessResponse {
+  data: IM3Profile;
+}
+
 export const im3Api = {
   sendOTP: async (): Promise<SendOTPResponse> => {
-    const response = await apiClient.axios.get<SendOTPResponse>('/api/im3/send-otp');
+    const response = await apiClient.axios.get('/api/im3/send-otp');
     return response.data;
   },
 
   verifyOTP: async (otp: string): Promise<VerifyOTPResponse> => {
-    const response = await apiClient.axios.post<VerifyOTPResponse>('/api/im3/verify-otp', { otp });
+    const response = await apiClient.axios.post('/api/im3/verify-otp', { otp });
     return response.data;
   },
 
-  getProfile: async (): Promise<{ success: boolean; data: IM3Profile }> => {
-    const response = await apiClient.axios.get<{ success: boolean; data: IM3Profile }>('/api/im3/profile');
+  getProfile: async (): Promise<IM3ProfileResponse> => {
+    const response = await apiClient.axios.get('/api/im3/profile');
     return response.data;
   },
 };

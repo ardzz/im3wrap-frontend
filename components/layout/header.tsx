@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useIM3 } from '@/lib/hooks/use-im3';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,23 +18,25 @@ import Link from 'next/link';
 
 export function Header() {
   const { user, logout } = useAuth();
+  const { isIM3Linked, profile } = useIM3();
 
   const getInitials = (username: string) => {
     return username.slice(0, 2).toUpperCase();
   };
 
-  const isIM3Linked = !!user?.token_id;
+  const formatBalance = (balance: number | undefined | null) => {
+    if (typeof balance !== 'number' || isNaN(balance)) {
+      return 'N/A';
+    }
+    return `Rp ${balance.toLocaleString('id-ID')}`;
+  };
 
   const handleLogout = () => {
     logout();
-
-    // Clear all possible storage
     if (typeof window !== 'undefined') {
       localStorage.clear();
       sessionStorage.clear();
     }
-
-    // Force a full page reload and redirect
     window.location.replace('/login');
   };
 
@@ -90,6 +93,13 @@ export function Header() {
               {isIM3Linked ? "IM3 Linked" : "Not Linked"}
             </Badge>
 
+            {/* Balance if IM3 is linked and has valid balance */}
+            {isIM3Linked && profile && typeof profile.balance === 'number' && !isNaN(profile.balance) && (
+              <Badge variant="secondary">
+                {formatBalance(profile.balance)}
+              </Badge>
+            )}
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -115,6 +125,11 @@ export function Header() {
                         {isIM3Linked ? 'IM3 Linked' : 'IM3 Not Linked'}
                       </span>
                     </div>
+                    {isIM3Linked && profile && (
+                      <div className="text-xs text-green-600">
+                        Balance: {formatBalance(profile.balance)}
+                      </div>
+                    )}
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
