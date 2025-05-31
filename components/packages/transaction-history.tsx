@@ -21,21 +21,25 @@ import {
   AlertCircle,
   ArrowRight
 } from 'lucide-react';
-import { formatDistanceToNow, format, parseISO } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import Link from 'next/link';
 
 interface TransactionHistoryProps {
   limit?: number;
   showViewAll?: boolean;
+  showHeader?: boolean; // Add this prop to control header visibility
 }
 
-export function TransactionHistory({ limit, showViewAll = true }: TransactionHistoryProps) {
+export function TransactionHistory({
+  limit,
+  showViewAll = true,
+  showHeader = true // Default to true for backwards compatibility
+}: TransactionHistoryProps) {
   const {
     transactions,
     isLoadingTransactions,
     error,
     loadTransactions,
-    clearError,
   } = usePackagesStore();
 
   useEffect(() => {
@@ -79,7 +83,7 @@ export function TransactionHistory({ limit, showViewAll = true }: TransactionHis
     try {
       // Try parsing as ISO first
       if (dateString.includes('T') && dateString.includes('Z')) {
-        return parseISO(dateString);
+        return new Date(dateString);
       }
 
       // Handle GMT format like "Tue, 28 Jan 2025 14:30:30 GMT"
@@ -114,6 +118,12 @@ export function TransactionHistory({ limit, showViewAll = true }: TransactionHis
   if (isLoadingTransactions) {
     return (
       <div className="space-y-4">
+        {showHeader && (
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-8 w-20" />
+          </div>
+        )}
         {Array.from({ length: limit || 5 }).map((_, i) => (
           <Card key={i}>
             <CardHeader>
@@ -144,34 +154,37 @@ export function TransactionHistory({ limit, showViewAll = true }: TransactionHis
         </Alert>
       )}
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <History className="h-5 w-5" />
-          <h2 className="text-lg font-semibold">Transaction History</h2>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => loadTransactions()}
-            disabled={isLoadingTransactions}
-          >
-            {isLoadingTransactions ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-          </Button>
-          {showViewAll && limit && transactions.length > limit && (
-            <Button asChild size="sm">
-              <Link href="/transactions">
-                View All
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
+      {/* Only show header if showHeader is true */}
+      {showHeader && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <History className="h-5 w-5" />
+            <h2 className="text-lg font-semibold">Transaction History</h2>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadTransactions()}
+              disabled={isLoadingTransactions}
+            >
+              {isLoadingTransactions ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
             </Button>
-          )}
+            {showViewAll && limit && transactions.length > limit && (
+              <Button asChild size="sm">
+                <Link href="/transactions">
+                  View All
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {displayTransactions.length === 0 ? (
         <Card>

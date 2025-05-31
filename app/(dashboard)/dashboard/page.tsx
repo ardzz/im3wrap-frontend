@@ -22,7 +22,6 @@ import { usePackagesStore } from '@/lib/store/packages-store';
 import { useEffect } from 'react';
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
   const { isIM3Linked, profile } = useIM3();
   const { transactions, loadTransactions } = usePackagesStore();
 
@@ -38,7 +37,6 @@ export default function DashboardPage() {
   };
 
   // Calculate stats
-  const recentTransactions = transactions.slice(0, 3);
   const pendingTransactions = transactions.filter(t => t.status === 'PROCESSING' || t.status === 'PENDING').length;
   const totalSpent = transactions
     .filter(t => t.status === 'SUCCESS')
@@ -70,18 +68,15 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header with better spacing */}
+      {/* Header */}
       <div className="flex justify-between items-start">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.username}!</h1>
           <p className="text-gray-600 text-lg">Manage your IM3 packages and transactions</p>
         </div>
-        <Button onClick={logout} variant="outline" size="lg">
-          Logout
-        </Button>
       </div>
 
-      {/* Quick Stats with fixed alignment */}
+      {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -142,20 +137,21 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Quick Actions with fixed alignment */}
+      {/* Quick Actions - Fixed with consistent heights and button alignment */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="hover:shadow-lg transition-all duration-200">
-          <CardHeader>
+        {/* Card 1 - Browse Packages */}
+        <Card className="hover:shadow-lg transition-all duration-200 flex flex-col h-full">
+          <CardHeader className="flex-shrink-0">
             <CardTitle className="flex items-center gap-3 text-left">
               <Package2 className="h-5 w-5 flex-shrink-0" />
               Browse Packages
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4 text-left">
+          <CardContent className="flex flex-col flex-grow">
+            <p className="text-gray-600 mb-4 text-left flex-grow">
               Discover and purchase IM3 data packages at great prices.
             </p>
-            <Button asChild className="w-full">
+            <Button asChild className="w-full mt-auto">
               <Link href="/packages">
                 View Packages
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -164,21 +160,22 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-all duration-200">
-          <CardHeader>
+        {/* Card 2 - IM3 Account */}
+        <Card className="hover:shadow-lg transition-all duration-200 flex flex-col h-full">
+          <CardHeader className="flex-shrink-0">
             <CardTitle className="flex items-center gap-3 text-left">
               <Smartphone className="h-5 w-5 flex-shrink-0" />
               IM3 Account
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4 text-left">
+          <CardContent className="flex flex-col flex-grow">
+            <p className="text-gray-600 mb-4 text-left flex-grow">
               {isIM3Linked
                 ? "Manage your linked IM3 account and view details."
                 : "Link your IM3 account to start purchasing packages."
               }
             </p>
-            <Button asChild variant={isIM3Linked ? "outline" : "default"} className="w-full">
+            <Button asChild variant={isIM3Linked ? "outline" : "default"} className="w-full mt-auto">
               <Link href="/im3">
                 {isIM3Linked ? "Manage Account" : "Link Account"}
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -187,18 +184,19 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-all duration-200">
-          <CardHeader>
+        {/* Card 3 - Transaction History */}
+        <Card className="hover:shadow-lg transition-all duration-200 flex flex-col h-full">
+          <CardHeader className="flex-shrink-0">
             <CardTitle className="flex items-center gap-3 text-left">
               <History className="h-5 w-5 flex-shrink-0" />
               Transaction History
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4 text-left">
+          <CardContent className="flex flex-col flex-grow">
+            <p className="text-gray-600 mb-4 text-left flex-grow">
               View all your package purchases and transaction details.
             </p>
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild variant="outline" className="w-full mt-auto">
               <Link href="/transactions">
                 View History
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -208,13 +206,13 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent Transactions */}
+      {/* Transaction History */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3 text-left">
               <History className="h-5 w-5 flex-shrink-0" />
-              Recent Transactions
+              Transaction History
             </CardTitle>
             {transactions.length > 3 && (
               <Button asChild variant="outline" size="sm">
@@ -227,7 +225,7 @@ export default function DashboardPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <TransactionHistory limit={3} showViewAll={false} />
+          <TransactionHistory limit={3} showViewAll={false} showHeader={false} />
         </CardContent>
       </Card>
 
@@ -240,35 +238,35 @@ export default function DashboardPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-500">Username</label>
-                <p className="text-sm">{user.username}</p>
+                <label className="text-sm font-medium text-gray-500 block mb-1">Username</label>
+                <p className="text-base">{user.username}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Email</label>
-                <p className="text-sm">{user.email || 'Not provided'}</p>
+                <label className="text-sm font-medium text-gray-500 block mb-1">Email</label>
+                <p className="text-base">{user.email || 'Not provided'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-500">Phone Number</label>
-                <p className="text-sm">{user.phone_number || 'Not provided'}</p>
+                <label className="text-sm font-medium text-gray-500 block mb-1">Phone Number</label>
+                <p className="text-base">{user.phone_number || 'Not provided'}</p>
               </div>
             </div>
 
             {isIM3Linked && profile && (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">IM3 Number</label>
-                  <p className="text-sm">{profile.mob}</p>
+                  <label className="text-sm font-medium text-gray-500 block mb-1">IM3 Number</label>
+                  <p className="text-base">{profile.mob}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">IM3 Name</label>
-                  <p className="text-sm">{profile.name}</p>
+                  <label className="text-sm font-medium text-gray-500 block mb-1">IM3 Name</label>
+                  <p className="text-base">{profile.name}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Account Status</label>
-                  <Badge variant={profile.status === 'ACTIVE' ? 'default' : 'destructive'}>
+                  <label className="text-sm font-medium text-gray-500 block mb-2">Account Status</label>
+                  <Badge variant={profile.status === 'ACTIVE' ? 'default' : 'destructive'} className="bg-green-100 text-green-800">
                     {profile.status}
                   </Badge>
                 </div>
@@ -276,7 +274,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="mt-4">
+          <div className="mt-6 pt-4 border-t">
             <Button asChild variant="outline">
               <Link href="/profile">
                 <User className="mr-2 h-4 w-4" />
