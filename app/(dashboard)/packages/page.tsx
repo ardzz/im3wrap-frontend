@@ -1,7 +1,6 @@
 'use client';
 
 import { PackageList } from '@/components/packages/package-list';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Package2, Info, Smartphone } from 'lucide-react';
 import { useIM3 } from '@/lib/hooks/use-im3';
