@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,9 +39,15 @@ export function LoginForm() {
     try {
       clearError();
       await login(data.username, data.password);
+      toast.success("Welcome back!", {
+        description: "You have successfully signed in.",
+      });
       router.push('/dashboard');
     } catch (error) {
-      // Error is handled by the store
+      // Error is handled by the store, but we can add a toast for better UX
+      toast.error("Sign in failed", {
+        description: "Please check your credentials and try again.",
+      });
     }
   };
 

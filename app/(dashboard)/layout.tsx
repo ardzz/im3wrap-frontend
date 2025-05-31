@@ -1,4 +1,7 @@
 import { AuthGuard } from '@/components/auth/auth-guard';
+import { Header } from '@/components/layout/header';
+import { SonnerProvider } from '@/components/providers/sonner-provider';
+import React from "react";
 
 export default function DashboardLayout({
   children,
@@ -11,7 +14,13 @@ export default function DashboardLayout({
         <div>Loading...</div>
       </div>
     }>
-      {children}
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="py-8">
+          {children}
+        </main>
+      </div>
+      <SonnerProvider />
     </AuthGuard>
   );
 }
