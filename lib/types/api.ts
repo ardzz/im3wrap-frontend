@@ -58,6 +58,13 @@ export interface IM3ProfileData {
   p2p_status: boolean;
   pushid: string;
   showreferral: boolean;
+  social: {
+    apple: { title: string };
+    email: { title: string };
+    facebook: { id: string; title: string };
+    google: { id: string; title: string };
+    twiter: { title: string };
+  };
   uniqueid: string;
   userclass: string;
   username: string;
@@ -80,6 +87,74 @@ export interface IM3Profile {
     buttontext: string;
     icon: string;
   }>;
+}
+
+// Package types
+export interface Package {
+  id: number;
+  pvr_code: string;
+  keyword: string;
+  discount_price: number;
+  normal_price: number;
+  package_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PackageWithDetails extends Package {
+  category?: string;
+  description?: string;
+  validity?: string;
+  data_quota?: string;
+  call_quota?: string;
+  sms_quota?: string;
+  is_popular?: boolean;
+  tags?: string[];
+}
+
+// Transaction types
+export interface Transaction {
+  id: number;
+  user_id: number;
+  package_id: number;
+  status: 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
+  qr_code: string | null;
+  created_at: string;
+  updated_at: string;
+  package?: Package;
+}
+
+export interface TransactionWithDetails extends Transaction {
+  package: PackageWithDetails;
+  error_message?: string;
+  completion_time?: string;
+  reference_id?: string;
+}
+
+// API Response types
+export interface PackagesResponse extends SuccessResponse {
+  data: Package[];
+}
+
+export interface PackageResponse extends SuccessResponse {
+  data: Package;
+}
+
+export interface PurchaseResponse extends SuccessResponse {
+  data: {
+    transaction_id: number;
+    task_id: string;
+    status: 'PROCESSING';
+    message: string;
+  };
+}
+
+export interface TransactionsResponse extends SuccessResponse {
+  data: TransactionWithDetails[];
+}
+
+export interface TransactionResponse extends SuccessResponse {
+  data: TransactionWithDetails;
 }
 
 // Authentication types
