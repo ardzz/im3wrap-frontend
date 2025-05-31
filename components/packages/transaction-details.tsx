@@ -595,10 +595,10 @@ export function TransactionDetails({ transactionId }: TransactionDetailsProps) {
                           <span className="text-sm text-gray-600">Package Price</span>
                           <div className="text-right">
                             <p className="text-sm text-gray-400 line-through">
-                              {formatPrice(transaction.package!.normal_price)}
+                              {formatPrice(transaction.package!.discount_price)}
                             </p>
                             <p className="text-lg font-semibold text-green-600">
-                              {formatPrice(transaction.package!.discount_price)}
+                              {formatPrice(transaction.package!.normal_price)}
                             </p>
                           </div>
                         </div>
@@ -613,12 +613,19 @@ export function TransactionDetails({ transactionId }: TransactionDetailsProps) {
                       </div>
                     )}
 
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Platform Fee</span>
+                      <span className="text-lg font-semibold text-green-600">
+                        {formatPrice(platformFee)}
+                      </span>
+                    </div>
+
                     <hr />
 
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">Total Paid</span>
                       <span className="text-xl font-bold text-green-600">
-                        {formatPrice(transactionPrice)}
+                        {formatPrice(transaction.package!.normal_price + platformFee)}
                       </span>
                     </div>
                   </div>
