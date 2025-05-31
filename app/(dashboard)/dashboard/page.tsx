@@ -22,6 +22,7 @@ import { usePackagesStore } from '@/lib/store/packages-store';
 import { useEffect } from 'react';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const { isIM3Linked, profile } = useIM3();
   const { transactions, loadTransactions } = usePackagesStore();
 
